@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
 export default function Navbar() {
   const [user, setUser] = useState(null);
+  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -13,6 +15,11 @@ export default function Navbar() {
     });
     return () => unsubscribe();
   }, []);
+
+  const handleSignOut = async () => {
+    await signOut(auth);
+    router.push('/');
+  };
 
   return (
     <nav className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-800">
@@ -26,7 +33,7 @@ export default function Navbar() {
               Welcome, {user.email}
             </span>
             <button
-              onClick={() => signOut(auth)}
+              onClick={handleSignOut}
               className="rounded-full border border-black dark:border-zinc-50 px-4 py-2 text-sm font-medium"
             >
               Sign Out
