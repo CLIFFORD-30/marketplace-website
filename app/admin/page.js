@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
 const ADMIN_EMAIL = 'kyeremehclifford62@gmail.com';
@@ -12,12 +12,6 @@ export default function Admin() {
   const [checking, setChecking] = useState(true);
   const [products, setProducts] = useState([]);
   const router = useRouter();
-
-  const fetchProducts = async () => {
-    const res = await fetch('http://localhost:5000/api/products', { cache: 'no-store' });
-    const data = await res.json();
-    setProducts(data);
-  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -33,14 +27,15 @@ export default function Admin() {
     return () => unsubscribe();
   }, [router]);
 
-  const handleDelete = async (id) => {
-    await fetch(`http://localhost:5000/api/products/${id}`, { method: 'DELETE' });
-    setProducts(products.filter((p) => p.id !== id));
+  const fetchProducts = async () => {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products`, { cache: 'no-store' });
+    const data = await res.json();
+    setProducts(data);
   };
 
-  const handleSignOut = async () => {
-    await signOut(auth);
-    router.push('/');
+  const handleDelete = async (id) => {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products/${id}`, { method: 'DELETE' });
+    setProducts(products.filter((p) => p.id !== id));
   };
 
   if (checking || !user || user.email !== ADMIN_EMAIL) {
@@ -53,17 +48,9 @@ export default function Admin() {
 
   return (
     <main className="px-6 py-12 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between gap-4 mb-8">
-        <h1 className="text-3xl font-semibold tracking-tight text-black dark:text-zinc-50">
-          Admin Dashboard
-        </h1>
-        <button
-          onClick={handleSignOut}
-          className="rounded-full border border-black px-4 py-2 text-sm font-medium"
-        >
-          Sign Out
-        </button>
-      </div>
+      <h1 className="text-3xl font-semibold tracking-tight text-black dark:text-zinc-50 mb-8">
+        Admin Dashboard
+      </h1>
 
       {products.length === 0 ? (
         <p className="text-zinc-500">No products to manage.</p>

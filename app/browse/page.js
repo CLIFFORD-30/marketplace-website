@@ -1,7 +1,7 @@
 import Navbar from '@/components/Navbar';
 
 export default async function Browse() {
-  const res = await fetch('http://localhost:5000/api/products', { cache: 'no-store' });
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products`, { cache: 'no-store' });
   const products = await res.json();
 
   return (
