@@ -5,11 +5,15 @@ import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
+const CATEGORIES = ['Electronics', 'Fashion', 'Home & Living', 'Other'];
+
 export default function Sell() {
   const [user, setUser] = useState(null);
   const [checking, setChecking] = useState(true);
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
+  const [oldPrice, setOldPrice] = useState('');
+  const [category, setCategory] = useState(CATEGORIES[0]);
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [error, setError] = useState('');
@@ -39,6 +43,8 @@ export default function Sell() {
         body: JSON.stringify({
           name,
           price: Number(price),
+          oldPrice: oldPrice ? Number(oldPrice) : null,
+          category,
           description,
           vendor: user.email,
           imageUrl,
@@ -50,6 +56,8 @@ export default function Sell() {
       setSuccess(true);
       setName('');
       setPrice('');
+      setOldPrice('');
+      setCategory(CATEGORIES[0]);
       setDescription('');
       setImageUrl('');
     } catch (err) {
@@ -81,6 +89,15 @@ export default function Sell() {
           className="border border-zinc-300 rounded-lg px-4 py-2"
           required
         />
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          className="border border-zinc-300 rounded-lg px-4 py-2 bg-white dark:bg-zinc-900"
+        >
+          {CATEGORIES.map((cat) => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
         <input
           type="number"
           placeholder="Price (GHS)"
@@ -88,6 +105,13 @@ export default function Sell() {
           onChange={(e) => setPrice(e.target.value)}
           className="border border-zinc-300 rounded-lg px-4 py-2"
           required
+        />
+        <input
+          type="number"
+          placeholder="Original price (optional, for discount badge)"
+          value={oldPrice}
+          onChange={(e) => setOldPrice(e.target.value)}
+          className="border border-zinc-300 rounded-lg px-4 py-2"
         />
         <textarea
           placeholder="Description"
@@ -107,7 +131,7 @@ export default function Sell() {
         {error && <p className="text-sm text-red-600">{error}</p>}
         {success && <p className="text-sm text-green-600">Product added successfully!</p>}
 
-        <button
+               <button
           type="submit"
           className="rounded-full bg-black text-white px-6 py-3 font-medium"
         >

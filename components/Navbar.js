@@ -1,13 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
 export default function Navbar() {
   const [user, setUser] = useState(null);
-  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -16,15 +14,10 @@ export default function Navbar() {
     return () => unsubscribe();
   }, []);
 
-  const handleSignOut = async () => {
-    await signOut(auth);
-    router.push('/');
-  };
-
   return (
     <nav className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-800">
       <span className="text-xl font-semibold tracking-tight text-black dark:text-zinc-50">
-        MarketPlace
+        Market<span className="text-red-600">Place</span>
       </span>
       <div className="flex items-center gap-4">
         {user ? (
@@ -33,8 +26,8 @@ export default function Navbar() {
               Welcome, {user.email}
             </span>
             <button
-              onClick={handleSignOut}
-              className="rounded-full border border-black dark:border-zinc-50 px-4 py-2 text-sm font-medium"
+              onClick={() => signOut(auth)}
+              className="rounded-full border border-red-600 text-red-600 px-4 py-2 text-sm font-medium"
             >
               Sign Out
             </button>
@@ -44,7 +37,7 @@ export default function Navbar() {
             <a href="/signin" className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
               Sign In
             </a>
-            <a href="/signup" className="rounded-full bg-black text-white px-4 py-2 text-sm font-medium">
+            <a href="/signup" className="rounded-full bg-red-600 text-white px-4 py-2 text-sm font-medium">
               Sign Up
             </a>
           </>

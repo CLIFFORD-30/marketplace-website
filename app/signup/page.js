@@ -46,7 +46,7 @@ export default function SignUp() {
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 
-        <button
+               <button
           type="submit"
           className="rounded-full bg-black text-white px-6 py-3 font-medium"
         >
