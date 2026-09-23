@@ -51,9 +51,16 @@ export default function SignIn() {
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-zinc-100 dark:bg-black px-6">
-      <span className="text-2xl font-semibold tracking-tight text-black dark:text-zinc-50 mb-6">
-        Market<span className="text-red-600">Place</span>
-      </span>
+      <div className="flex items-center gap-2 mb-6">
+        <img
+          src="https://uenr.edu.gh/wp-content/uploads/2021/01/Artboard-1.png"
+          alt="UENR logo"
+          className="h-10 w-auto"
+        />
+        <span className="text-2xl font-semibold tracking-tight text-black dark:text-zinc-50">
+          UENR <span className="text-red-600">MARKET</span>
+        </span>
+      </div>
 
       <div className="bg-zinc-900 rounded-2xl p-8 w-full max-w-sm">
         <h1 className="text-xl font-semibold text-white text-center mb-6">Sign In</h1>

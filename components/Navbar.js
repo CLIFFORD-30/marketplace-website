@@ -16,9 +16,16 @@ export default function Navbar() {
 
   return (
     <nav className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-800">
-      <span className="text-xl font-semibold tracking-tight text-black dark:text-zinc-50">
-        Market<span className="text-red-600">Place</span>
-      </span>
+      <a href="/" className="flex items-center gap-2">
+        <img
+          src="https://uenr.edu.gh/wp-content/uploads/2021/01/Artboard-1.png"
+          alt="UENR logo"
+          className="h-9 w-auto"
+        />
+        <span className="text-xl font-semibold tracking-tight text-black dark:text-zinc-50">
+          UENR <span className="text-red-600">MARKET</span>
+        </span>
+      </a>
       <div className="flex items-center gap-4">
         {user ? (
           <>
