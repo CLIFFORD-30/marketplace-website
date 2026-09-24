@@ -15,26 +15,26 @@ export default function Navbar() {
   }, []);
 
   return (
-    <nav className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-800">
-      <a href="/" className="flex items-center gap-2">
+    <nav className="flex flex-wrap items-center justify-between gap-y-2 px-4 sm:px-6 py-3 border-b border-zinc-200 dark:border-zinc-800">
+      <a href="/" className="flex items-center gap-2 shrink-0">
         <img
           src="https://uenr.edu.gh/wp-content/uploads/2021/01/Artboard-1.png"
           alt="UENR logo"
-          className="h-9 w-auto"
+          className="h-8 w-auto"
         />
-        <span className="text-xl font-semibold tracking-tight text-black dark:text-zinc-50">
+        <span className="text-base sm:text-xl font-semibold tracking-tight text-black dark:text-zinc-50 whitespace-nowrap">
           UENR <span className="text-red-600">MARKET</span>
         </span>
       </a>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 sm:gap-4">
         {user ? (
           <>
-            <span className="text-sm text-zinc-600 dark:text-zinc-300">
+            <span className="hidden sm:inline text-sm text-zinc-600 dark:text-zinc-300 truncate max-w-[180px]">
               Welcome, {user.email}
             </span>
             <button
               onClick={() => signOut(auth)}
-              className="rounded-full border border-red-600 text-red-600 px-4 py-2 text-sm font-medium"
+              className="rounded-full border border-red-600 text-red-600 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium whitespace-nowrap"
             >
               Sign Out
             </button>
