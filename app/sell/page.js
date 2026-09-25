@@ -4,16 +4,20 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import Navbar from '@/components/Navbar';
 
-const STATUSES = ['Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'];
+const CATEGORIES = ['Electronics', 'Fashion', 'Home & Living', 'Other'];
 
-export default function SellerDashboard() {
+export default function Sell() {
   const [user, setUser] = useState(null);
   const [checking, setChecking] = useState(true);
-  const [tab, setTab] = useState('products');
-  const [products, setProducts] = useState([]);
-  const [orders, setOrders] = useState([]);
+  const [name, setName] = useState('');
+  const [price, setPrice] = useState('');
+  const [oldPrice, setOldPrice] = useState('');
+  const [category, setCategory] = useState(CATEGORIES[0]);
+  const [description, setDescription] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -22,41 +26,43 @@ export default function SellerDashboard() {
       setChecking(false);
       if (!currentUser) {
         router.push('/signin');
-      } else {
-        fetchProducts(currentUser.email);
-        fetchOrders(currentUser.email);
       }
     });
     return () => unsubscribe();
   }, [router]);
 
-  const fetchProducts = async (email) => {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products`, { cache: 'no-store' });
-    const data = await res.json();
-    setProducts(data.filter((p) => p.vendor === email));
-  };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess(false);
 
-  const fetchOrders = async (email) => {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/orders/vendor/${encodeURIComponent(email)}`,
-      { cache: 'no-store' }
-    );
-    const data = await res.json();
-    setOrders(data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
-  };
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          price: Number(price),
+          oldPrice: oldPrice ? Number(oldPrice) : null,
+          category,
+          description,
+          vendor: user.email,
+          imageUrl,
+        }),
+      });
 
-  const handleDeleteProduct = async (id) => {
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products/${id}`, { method: 'DELETE' });
-    setProducts(products.filter((p) => p.id !== id));
-  };
+      if (!res.ok) throw new Error('Failed to add product');
 
-  const handleStatusChange = async (orderId, status) => {
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders/${orderId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
-    });
-    setOrders(orders.map((o) => (o.id === orderId ? { ...o, status } : o)));
+      setSuccess(true);
+      setName('');
+      setPrice('');
+      setOldPrice('');
+      setCategory(CATEGORIES[0]);
+      setDescription('');
+      setImageUrl('');
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   if (checking) {
@@ -68,98 +74,70 @@ export default function SellerDashboard() {
   }
 
   return (
-    <>
-      <Navbar />
-      <main className="px-6 py-12 max-w-3xl mx-auto pb-20">
-        <h1 className="text-3xl font-semibold tracking-tight text-black dark:text-zinc-50 mb-2 text-center">
-          Seller Dashboard
-        </h1>
-        <p className="text-sm text-zinc-500 text-center mb-8">{user?.email}</p>
+    <main className="flex flex-col items-center justify-center min-h-screen px-6">
+      <h1 className="text-3xl font-semibold tracking-tight text-black dark:text-zinc-50 mb-2">
+        List a New Product
+      </h1>
+      <p className="text-sm text-zinc-500 mb-6">Selling as {user?.email}</p>
 
-        <div className="flex gap-2 justify-center mb-8">
-          <button
-            onClick={() => setTab('products')}
-            className={`px-4 py-2 rounded-full text-sm font-medium ${
-              tab === 'products' ? 'bg-red-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'
-            }`}
-          >
-            My Products ({products.length})
-          </button>
-          <button
-            onClick={() => setTab('orders')}
-            className={`px-4 py-2 rounded-full text-sm font-medium ${
-              tab === 'orders' ? 'bg-red-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'
-            }`}
-          >
-            Orders ({orders.length})
-          </button>
-        </div>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-sm">
+        <input
+          type="text"
+          placeholder="Product name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="border border-zinc-300 rounded-lg px-4 py-2"
+          required
+        />
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          className="border border-zinc-300 rounded-lg px-4 py-2 bg-white dark:bg-zinc-900"
+        >
+          {CATEGORIES.map((cat) => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
+        <input
+          type="number"
+          placeholder="Price (GHS)"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          className="border border-zinc-300 rounded-lg px-4 py-2"
+          required
+        />
+        <input
+          type="number"
+          placeholder="Original price (optional, for discount badge)"
+          value={oldPrice}
+          onChange={(e) => setOldPrice(e.target.value)}
+          className="border border-zinc-300 rounded-lg px-4 py-2"
+        />
+        <textarea
+          placeholder="Description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="border border-zinc-300 rounded-lg px-4 py-2"
+          rows={3}
+        />
+        <input
+          type="url"
+          placeholder="Image URL (e.g. from imgur.com)"
+          value={imageUrl}
+          onChange={(e) => setImageUrl(e.target.value)}
+          className="border border-zinc-300 rounded-lg px-4 py-2"
+        />
 
-        {tab === 'products' ? (
-          products.length === 0 ? (
-            <p className="text-center text-zinc-500">
-              You haven't listed any products yet. <a href="/sell" className="text-red-600">Sell something</a>
-            </p>
-          ) : (
-            <div className="flex flex-col gap-4">
-              {products.map((product) => (
-                <div
-                  key={product.id}
-                  className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 flex items-center justify-between"
-                >
-                  <div>
-                    <p className="font-semibold text-black dark:text-zinc-50">{product.name}</p>
-                    <p className="text-sm text-zinc-500">GHS {product.price}</p>
-                  </div>
-                  <button
-                    onClick={() => handleDeleteProduct(product.id)}
-                    className="rounded-full bg-red-600 text-white px-4 py-2 text-sm font-medium"
-                  >
-                    Delete
-                  </button>
-                </div>
-              ))}
-            </div>
-          )
-        ) : orders.length === 0 ? (
-          <p className="text-center text-zinc-500">No orders yet for your products.</p>
-        ) : (
-          <div className="flex flex-col gap-4">
-            {orders.map((order) => {
-              const myItems = order.items.filter((item) => item.vendor === user.email);
-              return (
-                <div
-                  key={order.id}
-                  className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-4"
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-xs text-zinc-500">
-                      {new Date(order.createdAt).toLocaleDateString()}
-                    </span>
-                    <select
-                      value={order.status}
-                      onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                      className="text-xs border border-zinc-300 dark:border-zinc-700 rounded-full px-2 py-1 bg-white dark:bg-zinc-900"
-                    >
-                      {STATUSES.map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
-                  </div>
-                  {myItems.map((item, i) => (
-                    <p key={i} className="text-sm text-zinc-600 dark:text-zinc-300">
-                      {item.name} × {item.qty} — GHS {item.price * item.qty}
-                    </p>
-                  ))}
-                  <p className="text-xs text-zinc-500 mt-2">
-                    Buyer: {order.buyerEmail} · {order.phone}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </main>
-    </>
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        {success && <p className="text-sm text-green-600">Product added successfully!</p>}
+
+               <button
+          type="submit"
+          className="rounded-full bg-black text-white px-6 py-3 font-medium"
+        >
+          List Product
+        </button>
+      </form>
+    </main>
   );
 }
