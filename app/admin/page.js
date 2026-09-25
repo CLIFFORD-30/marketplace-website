@@ -13,6 +13,12 @@ export default function Admin() {
   const [products, setProducts] = useState([]);
   const router = useRouter();
 
+  const fetchProducts = async () => {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products`, { cache: 'no-store' });
+    const data = await res.json();
+    setProducts(data);
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -26,12 +32,6 @@ export default function Admin() {
     });
     return () => unsubscribe();
   }, [router]);
-
-  const fetchProducts = async () => {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products`, { cache: 'no-store' });
-    const data = await res.json();
-    setProducts(data);
-  };
 
   const handleDelete = async (id) => {
     await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products/${id}`, { method: 'DELETE' });

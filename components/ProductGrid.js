@@ -1,18 +1,27 @@
 'use client';
 
 import { useState } from 'react';
+import { useCart } from '@/components/CartContext';
 
 const CATEGORIES = ['All', 'Electronics', 'Fashion', 'Home & Living', 'Other'];
 
 export default function ProductGrid({ products }) {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
+  const { addToCart } = useCart();
+  const [added, setAdded] = useState(null);
 
   const filtered = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(search.toLowerCase());
     const matchesCategory = activeCategory === 'All' || product.category === activeCategory;
     return matchesSearch && matchesCategory;
   });
+
+  const handleAdd = (product) => {
+    addToCart(product);
+    setAdded(product.id);
+    setTimeout(() => setAdded(null), 1200);
+  };
 
   return (
     <>
@@ -95,6 +104,12 @@ export default function ProductGrid({ products }) {
                     </>
                   )}
                 </div>
+                <button
+                  onClick={() => handleAdd(product)}
+                  className="mt-4 bg-red-600 text-white rounded-full py-2 text-sm font-medium"
+                >
+                  {added === product.id ? 'Added ✓' : 'Add to Cart'}
+                </button>
               </div>
             </div>
           ))}

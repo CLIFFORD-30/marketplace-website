@@ -39,6 +39,41 @@ app.delete('/api/products/:id', async (req, res) => {
   res.json({ message: 'Product deleted' });
 });
 
+// POST a new order
+app.post('/api/orders', async (req, res) => {
+  const newOrder = req.body;
+  const docRef = await db.collection('orders').add({
+    ...newOrder,
+    status: 'Pending',
+    createdAt: new Date().toISOString(),
+  });
+  res.json({ id: docRef.id, ...newOrder });
+});
+
+// GET orders for a specific buyer
+app.get('/api/orders/buyer/:email', async (req, res) => {
+  const { email } = req.params;
+  const snapshot = await db.collection('orders').where('buyerEmail', '==', email).get();
+  const orders = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  res.json(orders);
+});
+
+// GET orders containing products from a specific vendor
+app.get('/api/orders/vendor/:email', async (req, res) => {
+  const { email } = req.params;
+  const snapshot = await db.collection('orders').where('vendorEmails', 'array-contains', email).get();
+  const orders = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  res.json(orders);
+});
+
+// PATCH an order's status
+app.patch('/api/orders/:id', async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  await db.collection('orders').doc(id).update({ status });
+  res.json({ message: 'Order updated' });
+});
+
 app.listen(PORT, () => {
   console.log(`Backend server running on http://localhost:${PORT}`);
 });
