@@ -1,8 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
+
+const ADMIN_EMAIL = 'kyeremehclifford62@gmail.com';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
@@ -10,14 +14,35 @@ export default function SignIn() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const router = useRouter();
+
+  const redirectByUser = async (user) => {
+    if (user.email === ADMIN_EMAIL) {
+      router.push('/admin');
+      return;
+    }
+    const userDoc = await getDoc(doc(db, 'users', user.uid));
+    if (userDoc.exists() && userDoc.data().role === 'seller') {
+      router.push('/seller');
+    } else {
+      if (!userDoc.exists()) {
+        await setDoc(doc(db, 'users', user.uid), {
+          email: user.email,
+          role: 'buyer',
+          createdAt: new Date().toISOString(),
+        });
+      }
+      router.push('/orders');
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setMessage('');
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      alert('Signed in successfully!');
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      await redirectByUser(cred.user);
     } catch (err) {
       setError(err.message);
     }
@@ -27,8 +52,8 @@ export default function SignIn() {
     setError('');
     setMessage('');
     try {
-      await signInWithPopup(auth, new GoogleAuthProvider());
-      alert('Signed in successfully!');
+      const result = await signInWithPopup(auth, new GoogleAuthProvider());
+      await redirectByUser(result.user);
     } catch (err) {
       setError(err.message);
     }

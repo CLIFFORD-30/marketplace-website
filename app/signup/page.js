@@ -1,21 +1,42 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
+
+const ADMIN_EMAIL = 'kyeremehclifford62@gmail.com';
 
 export default function SignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('buyer');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const router = useRouter();
+
+  const redirectByRole = (userEmail, userRole) => {
+    if (userEmail === ADMIN_EMAIL) {
+      router.push('/admin');
+    } else if (userRole === 'seller') {
+      router.push('/seller');
+    } else {
+      router.push('/orders');
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      alert('Account created successfully!');
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await setDoc(doc(db, 'users', cred.user.uid), {
+        email,
+        role,
+        createdAt: new Date().toISOString(),
+      });
+      redirectByRole(email, role);
     } catch (err) {
       setError(err.message);
     }
@@ -24,8 +45,13 @@ export default function SignUp() {
   const handleGoogleSignIn = async () => {
     setError('');
     try {
-      await signInWithPopup(auth, new GoogleAuthProvider());
-      alert('Account created successfully!');
+      const result = await signInWithPopup(auth, new GoogleAuthProvider());
+      await setDoc(
+        doc(db, 'users', result.user.uid),
+        { email: result.user.email, role: 'buyer', createdAt: new Date().toISOString() },
+        { merge: true }
+      );
+      redirectByRole(result.user.email, 'buyer');
     } catch (err) {
       setError(err.message);
     }
@@ -46,6 +72,27 @@ export default function SignUp() {
 
       <div className="bg-zinc-900 rounded-2xl p-8 w-full max-w-sm">
         <h1 className="text-xl font-semibold text-white text-center mb-6">Create Your Account</h1>
+
+        <div className="flex gap-2 mb-4">
+          <button
+            type="button"
+            onClick={() => setRole('buyer')}
+            className={`flex-1 py-2 rounded-lg text-sm font-medium ${
+              role === 'buyer' ? 'bg-red-600 text-white' : 'bg-zinc-800 text-zinc-400'
+            }`}
+          >
+            I'm a Buyer
+          </button>
+          <button
+            type="button"
+            onClick={() => setRole('seller')}
+            className={`flex-1 py-2 rounded-lg text-sm font-medium ${
+              role === 'seller' ? 'bg-red-600 text-white' : 'bg-zinc-800 text-zinc-400'
+            }`}
+          >
+            I'm a Seller
+          </button>
+        </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input
