@@ -3,9 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-
-const CATEGORIES = ['Electronics', 'Fashion', 'Home & Living', 'Other'];
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 
 export default function Sell() {
   const [user, setUser] = useState(null);
@@ -13,20 +12,32 @@ export default function Sell() {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [oldPrice, setOldPrice] = useState('');
-  const [category, setCategory] = useState(CATEGORIES[0]);
+  const [category, setCategory] = useState('Electronics');
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const router = useRouter();
 
+  const CATEGORIES = ['Electronics', 'Fashion', 'Home & Living', 'Other'];
+
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setChecking(false);
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (!currentUser) {
         router.push('/signin');
+        return;
       }
+
+      const snap = await getDoc(doc(db, 'users', currentUser.uid));
+      const role = snap.exists() ? snap.data().role : 'buyer';
+
+      if (role === 'buyer') {
+        router.push('/orders');
+        return;
+      }
+
+      setUser(currentUser);
+      setChecking(false);
     });
     return () => unsubscribe();
   }, [router]);
@@ -57,7 +68,7 @@ export default function Sell() {
       setName('');
       setPrice('');
       setOldPrice('');
-      setCategory(CATEGORIES[0]);
+      setCategory('Electronics');
       setDescription('');
       setImageUrl('');
     } catch (err) {
@@ -131,9 +142,9 @@ export default function Sell() {
         {error && <p className="text-sm text-red-600">{error}</p>}
         {success && <p className="text-sm text-green-600">Product added successfully!</p>}
 
-               <button
+        <button
           type="submit"
-          className="rounded-full bg-black text-white px-6 py-3 font-medium"
+          className="bg-red-600 text-white rounded-full py-3 font-medium"
         >
           List Product
         </button>

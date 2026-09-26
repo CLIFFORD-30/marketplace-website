@@ -1,6 +1,7 @@
 import Navbar from '@/components/Navbar';
 import BottomNav from '@/components/BottomNav';
 import PromoBanner from '@/components/PromoBanner';
+import HeroActions from '@/components/HeroActions';
 
 export default async function Home() {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products`);
@@ -26,14 +27,7 @@ export default async function Home() {
           One platform where vendors list their products and shoppers find what they need — all in one place.
         </p>
         <p className="mt-2 text-sm text-white/70">{products.length} product(s) currently listed</p>
-        <div className="flex gap-4 mt-8">
-          <a href="/browse" className="rounded-full bg-red-600 text-white px-6 py-3 font-medium">
-            Browse Products
-          </a>
-          <a href="/sell" className="rounded-full border border-white text-white px-6 py-3 font-medium">
-            Sell on Our Platform
-          </a>
-        </div>
+        <HeroActions />
       </div>
 
       <PromoBanner />
