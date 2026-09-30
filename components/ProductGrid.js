@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useCart } from '@/components/CartContext';
+import { useFavorites } from '@/components/useFavorites';
 
 const CATEGORIES = ['All', 'Electronics', 'Fashion', 'Home & Living', 'Other'];
 
@@ -9,7 +11,9 @@ export default function ProductGrid({ products }) {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
   const { addToCart } = useCart();
+  const { user, favorites, toggleFavorite } = useFavorites();
   const [added, setAdded] = useState(null);
+  const router = useRouter();
 
   const filtered = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(search.toLowerCase());
@@ -21,6 +25,14 @@ export default function ProductGrid({ products }) {
     addToCart(product);
     setAdded(product.id);
     setTimeout(() => setAdded(null), 1200);
+  };
+
+  const handleFavorite = async (productId) => {
+    if (!user) {
+      router.push('/signin');
+      return;
+    }
+    toggleFavorite(productId);
   };
 
   return (
@@ -63,8 +75,16 @@ export default function ProductGrid({ products }) {
           {filtered.map((product) => (
             <div
               key={product.id}
-              className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden flex flex-col"
+              className="relative border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden flex flex-col"
             >
+              <button
+                onClick={() => handleFavorite(product.id)}
+                className="absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-white/90 dark:bg-zinc-900/90 flex items-center justify-center text-lg"
+                aria-label="Toggle favorite"
+              >
+                {favorites.includes(product.id) ? '❤️' : '🤍'}
+              </button>
+
               {product.imageUrl ? (
                 <img
                   src={product.imageUrl}
