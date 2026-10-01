@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/components/CartContext';
 import { useFavorites } from '@/components/useFavorites';
@@ -13,7 +13,15 @@ export default function ProductGrid({ products }) {
   const { addToCart } = useCart();
   const { user, favorites, toggleFavorite } = useFavorites();
   const [added, setAdded] = useState(null);
+  const [ratings, setRatings] = useState({});
   const router = useRouter();
+
+  useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reviews/summary`, { cache: 'no-store' })
+      .then((res) => res.json())
+      .then(setRatings)
+      .catch(() => setRatings({}));
+  }, []);
 
   const filtered = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(search.toLowerCase());
@@ -72,67 +80,76 @@ export default function ProductGrid({ products }) {
         </p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {filtered.map((product) => (
-            <div
-              key={product.id}
-              className="relative border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden flex flex-col"
-            >
-              <button
-                onClick={() => handleFavorite(product.id)}
-                className="absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-white/90 dark:bg-zinc-900/90 flex items-center justify-center text-lg"
-                aria-label="Toggle favorite"
+          {filtered.map((product) => {
+            const rating = ratings[product.id];
+            return (
+              <div
+                key={product.id}
+                className="relative border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden flex flex-col"
               >
-                {favorites.includes(product.id) ? '❤️' : '🤍'}
-              </button>
-
-              {product.imageUrl ? (
-                <img
-                  src={product.imageUrl}
-                  alt={product.name}
-                  className="w-full h-48 object-cover"
-                />
-              ) : (
-                <div className="w-full h-48 bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 text-sm">
-                  No image
-                </div>
-              )}
-              <div className="p-5 flex flex-col flex-1">
-                {product.category && (
-                  <span className="text-xs text-red-600 font-medium mb-1">{product.category}</span>
-                )}
-                <h2 className="text-lg font-semibold text-black dark:text-zinc-50">
-                  {product.name}
-                </h2>
-                <p className="text-sm text-zinc-500 mt-1">
-                  Sold by {product.vendor}
-                </p>
-                <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-3 flex-1">
-                  {product.description}
-                </p>
-                <div className="mt-4 flex items-center gap-2 flex-wrap">
-                  <p className="text-xl font-semibold text-black dark:text-zinc-50">
-                    GHS {product.price}
-                  </p>
-                  {product.oldPrice && product.oldPrice > product.price && (
-                    <>
-                      <p className="text-sm text-zinc-400 line-through">
-                        GHS {product.oldPrice}
-                      </p>
-                      <span className="bg-green-600 text-white text-xs font-semibold px-2 py-0.5 rounded">
-                        -{Math.round(100 - (product.price / product.oldPrice) * 100)}%
-                      </span>
-                    </>
-                  )}
-                </div>
                 <button
-                  onClick={() => handleAdd(product)}
-                  className="mt-4 bg-red-600 text-white rounded-full py-2 text-sm font-medium"
+                  onClick={() => handleFavorite(product.id)}
+                  className="absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-white/90 dark:bg-zinc-900/90 flex items-center justify-center text-lg"
+                  aria-label="Toggle favorite"
                 >
-                  {added === product.id ? 'Added ✓' : 'Add to Cart'}
+                  {favorites.includes(product.id) ? '❤️' : '🤍'}
                 </button>
+
+                {product.imageUrl ? (
+                  <img
+                    src={product.imageUrl}
+                    alt={product.name}
+                    className="w-full h-48 object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-48 bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 text-sm">
+                    No image
+                  </div>
+                )}
+                <div className="p-5 flex flex-col flex-1">
+                  {product.category && (
+                    <span className="text-xs text-red-600 font-medium mb-1">{product.category}</span>
+                  )}
+                  <h2 className="text-lg font-semibold text-black dark:text-zinc-50">
+                    {product.name}
+                  </h2>
+                  {rating && (
+                    <p className="text-xs text-yellow-500 mt-1">
+                      {'★'.repeat(Math.round(rating.avg))}{'☆'.repeat(5 - Math.round(rating.avg))}
+                      <span className="text-zinc-500 ml-1">({rating.count})</span>
+                    </p>
+                  )}
+                  <p className="text-sm text-zinc-500 mt-1">
+                    Sold by {product.vendor}
+                  </p>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-3 flex-1">
+                    {product.description}
+                  </p>
+                  <div className="mt-4 flex items-center gap-2 flex-wrap">
+                    <p className="text-xl font-semibold text-black dark:text-zinc-50">
+                      GHS {product.price}
+                    </p>
+                    {product.oldPrice && product.oldPrice > product.price && (
+                      <>
+                        <p className="text-sm text-zinc-400 line-through">
+                          GHS {product.oldPrice}
+                        </p>
+                        <span className="bg-green-600 text-white text-xs font-semibold px-2 py-0.5 rounded">
+                          -{Math.round(100 - (product.price / product.oldPrice) * 100)}%
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleAdd(product)}
+                    className="mt-4 bg-red-600 text-white rounded-full py-2 text-sm font-medium"
+                  >
+                    {added === product.id ? 'Added ✓' : 'Add to Cart'}
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </>

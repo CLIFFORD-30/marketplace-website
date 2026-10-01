@@ -8,9 +8,11 @@ import { useCart } from '@/components/CartContext';
 
 export default function Navbar() {
   const [user, setUser] = useState(null);
+  const [mounted, setMounted] = useState(false);
   const { totalItems } = useCart();
 
   useEffect(() => {
+    setMounted(true);
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
     });
@@ -32,7 +34,7 @@ export default function Navbar() {
       <div className="flex items-center gap-3 sm:gap-4">
         <Link href="/cart" className="relative text-xl">
           🛒
-          {totalItems > 0 && (
+          {mounted && totalItems > 0 && (
             <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
               {totalItems}
             </span>

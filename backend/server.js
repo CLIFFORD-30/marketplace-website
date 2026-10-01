@@ -74,6 +74,70 @@ app.patch('/api/orders/:id', async (req, res) => {
   res.json({ message: 'Order updated' });
 });
 
+// POST a new review (only for delivered orders, one review per order+product)
+app.post('/api/reviews', async (req, res) => {
+  const { productId, orderId, buyerEmail, rating, comment } = req.body;
+
+  const orderDoc = await db.collection('orders').doc(orderId).get();
+  if (!orderDoc.exists) return res.status(404).json({ error: 'Order not found' });
+
+  const order = orderDoc.data();
+  if (order.buyerEmail !== buyerEmail) return res.status(403).json({ error: 'Not your order' });
+  if (order.status !== 'Delivered') return res.status(400).json({ error: 'Order not delivered yet' });
+
+  const hasItem = order.items.some((item) => item.id === productId);
+  if (!hasItem) return res.status(400).json({ error: 'Product not in this order' });
+
+  const existing = await db.collection('reviews')
+    .where('orderId', '==', orderId)
+    .where('productId', '==', productId)
+    .get();
+  if (!existing.empty) return res.status(400).json({ error: 'Already reviewed' });
+
+  const docRef = await db.collection('reviews').add({
+    productId,
+    orderId,
+    buyerEmail,
+    rating: Number(rating),
+    comment,
+    createdAt: new Date().toISOString(),
+  });
+  res.json({ id: docRef.id });
+});
+
+// GET all reviews for one product
+app.get('/api/reviews/product/:productId', async (req, res) => {
+  const { productId } = req.params;
+  const snapshot = await db.collection('reviews').where('productId', '==', productId).get();
+  const reviews = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  res.json(reviews);
+});
+
+// GET everything one buyer has reviewed so far
+app.get('/api/reviews/buyer/:email', async (req, res) => {
+  const { email } = req.params;
+  const snapshot = await db.collection('reviews').where('buyerEmail', '==', email).get();
+  const reviews = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  res.json(reviews);
+});
+
+// GET average rating + count for every product at once
+app.get('/api/reviews/summary', async (req, res) => {
+  const snapshot = await db.collection('reviews').get();
+  const totals = {};
+  snapshot.docs.forEach((doc) => {
+    const { productId, rating } = doc.data();
+    if (!totals[productId]) totals[productId] = { sum: 0, count: 0 };
+    totals[productId].sum += rating;
+    totals[productId].count += 1;
+  });
+  const summary = {};
+  Object.keys(totals).forEach((id) => {
+    summary[id] = { avg: totals[id].sum / totals[id].count, count: totals[id].count };
+  });
+  res.json(summary);
+});
+
 app.listen(PORT, () => {
   console.log(`Backend server running on http://localhost:${PORT}`);
 });
