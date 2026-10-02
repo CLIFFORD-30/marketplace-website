@@ -50,6 +50,15 @@ export default function Orders() {
     setReviewed(data.map((r) => `${r.orderId}_${r.productId}`));
   };
 
+  const confirmDelivered = async (orderId) => {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders/${orderId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'Delivered' }),
+    });
+    setOrders(orders.map((o) => (o.id === orderId ? { ...o, status: 'Delivered' } : o)));
+  };
+
   const openReviewForm = (orderId, productId) => {
     setReviewing(`${orderId}_${productId}`);
     setRating(5);
@@ -109,9 +118,19 @@ export default function Orders() {
                   <span className="text-xs text-zinc-500">
                     {new Date(order.createdAt).toLocaleDateString()}
                   </span>
-                  <span className="text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300 px-2 py-1 rounded-full font-medium">
-                    {order.status}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300 px-2 py-1 rounded-full font-medium">
+                      {order.status}
+                    </span>
+                    {order.status !== 'Delivered' && order.status !== 'Cancelled' && (
+                      <button
+                        onClick={() => confirmDelivered(order.id)}
+                        className="text-xs text-green-600 underline"
+                      >
+                        Mark as Delivered
+                      </button>
+                    )}
+                  </div>
                 </div>
                 {order.items.map((item, i) => {
                   const key = `${order.id}_${item.id}`;

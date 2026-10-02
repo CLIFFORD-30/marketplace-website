@@ -2,22 +2,22 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useCart } from '@/components/CartContext';
+import { useUserRole } from '@/components/useUserRole';
 
 export default function Navbar() {
-  const [user, setUser] = useState(null);
   const [mounted, setMounted] = useState(false);
   const { totalItems } = useCart();
+  const { user, role } = useUserRole();
 
   useEffect(() => {
     setMounted(true);
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-    return () => unsubscribe();
   }, []);
+
+  const dashboardHref = role === 'seller' ? '/seller' : role === 'admin' ? '/admin' : '/orders';
+  const dashboardLabel = role === 'seller' ? 'My Dashboard' : role === 'admin' ? 'Admin' : 'My Orders';
 
   return (
     <nav className="flex flex-wrap items-center justify-between gap-y-2 px-4 sm:px-6 py-3 border-b border-zinc-200 dark:border-zinc-800">
@@ -32,6 +32,14 @@ export default function Navbar() {
         </span>
       </Link>
       <div className="flex items-center gap-3 sm:gap-4">
+        {user && (
+          <Link
+            href={dashboardHref}
+            className="hidden sm:inline-block text-sm font-medium text-red-600 whitespace-nowrap"
+          >
+            {dashboardLabel}
+          </Link>
+        )}
         <Link href="/cart" className="relative text-xl">
           🛒
           {mounted && totalItems > 0 && (
